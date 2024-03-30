@@ -4,7 +4,7 @@ import clickSoundAsset from "../tic tac tao/sounds/click.wav";
 import { IoMdHome } from "react-icons/io";
 import { VscDebugRestart } from "react-icons/vsc";
 import { FaUser } from "react-icons/fa";
-import './board.css'
+import './TicTacToe.css'
 
 const PLAYER_X = "X";
 const PLAYER_O = "O";
