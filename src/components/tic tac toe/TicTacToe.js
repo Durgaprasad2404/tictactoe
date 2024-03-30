@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
-import "./TicTacToe.css";
+import { useState, useEffect, useRef } from "react";
+import gameOverSoundAsset from "../tic tac tao/sounds/game_over.wav";
+import clickSoundAsset from "../tic tac tao/sounds/click.wav";
 import { IoMdHome } from "react-icons/io";
 import { VscDebugRestart } from "react-icons/vsc";
 import { FaUser } from "react-icons/fa";
-
-const gameOverSound = new Audio("./sounds/game_over.wav");
-gameOverSound.volume = 0.2;
-const clickSound = new Audio("./sounds/click.wav");
-clickSound.volume = 0.5;
+import './board.css'
 
 const PLAYER_X = "X";
 const PLAYER_O = "O";
@@ -41,12 +38,7 @@ function checkWinner(tiles, setStrikeClass, setGameState, setGameOver) {
     ) {
       setStrikeClass(strikeClass);
       setGameState(tileValue1 === PLAYER_X ? "X" : "O");
-
-      // Delay showing game over message and play again button
-      setTimeout(() => {
-        setGameOver(true); // Set game over after 3 seconds delay
-      }, 3000);
-
+      setGameOver(true); // Set game over immediately
       return;
     }
   }
@@ -54,10 +46,7 @@ function checkWinner(tiles, setStrikeClass, setGameState, setGameOver) {
   const areAllTilesFilledIn = tiles.every((tile) => tile !== null);
   if (areAllTilesFilledIn) {
     setGameState("Draw");
-    // Delay showing game over message and play again button
-    setTimeout(() => {
-      setGameOver(true); // Set game over after 3 seconds delay
-    }, 3000);
+    setGameOver(true); // Set game over immediately
   }
 }
 
@@ -68,6 +57,12 @@ function TicTacToe() {
   const [gameState, setGameState] = useState("In Progress");
   const [gameOver, setGameOver] = useState(false); // State to track if game is over
   const [gameStarted, setGameStarted] = useState(false);
+  const [singlePlayerMode, setSinglePlayerMode] = useState(false); // Track single player mode
+  const [showPlayerOptions, setShowPlayerOptions] = useState(false); // Track whether to show player options
+  const gameOverSound = useRef(new Audio(gameOverSoundAsset));
+  gameOverSound.volume = 0.2;
+  const clickSound = useRef(new Audio(clickSoundAsset));
+  clickSound.volume = 0.5;
 
   const handleTileClick = (index) => {
     if (gameState !== "In Progress" || tiles[index] !== null) {
@@ -77,7 +72,30 @@ function TicTacToe() {
     const newTiles = [...tiles];
     newTiles[index] = playerTurn;
     setTiles(newTiles);
-    setPlayerTurn(playerTurn === PLAYER_X ? PLAYER_O : PLAYER_X);
+    checkWinner(newTiles, setStrikeClass, setGameState, setGameOver);
+
+    if (gameState === "In Progress") {
+      if (!singlePlayerMode) {
+        // For double player mode, switch turns between X and O
+        setPlayerTurn(playerTurn === PLAYER_X ? PLAYER_O : PLAYER_X);
+      } else {
+        // For single player mode, let the computer make a move
+        setTimeout(() => {
+          let availableMoves = [];
+          for (let i = 0; i < newTiles.length; i++) {
+            if (newTiles[i] === null) {
+              availableMoves.push(i);
+            }
+          }
+          const randomIndex = Math.floor(Math.random() * availableMoves.length);
+          const randomMove = availableMoves[randomIndex];
+          const updatedTiles = [...newTiles];
+          updatedTiles[randomMove] = PLAYER_O;
+          setTiles(updatedTiles);
+          checkWinner(updatedTiles, setStrikeClass, setGameState, setGameOver);
+        }, 500);
+      }
+    }
   };
 
   const handleReset = () => {
@@ -85,7 +103,7 @@ function TicTacToe() {
     setPlayerTurn(PLAYER_X);
     setStrikeClass(null);
     setGameState("In Progress");
-    setGameOver(false); // Reset game over state
+    setGameOver(false);
   };
 
   const handleBackToHome = () => {
@@ -103,13 +121,13 @@ function TicTacToe() {
 
   useEffect(() => {
     if (tiles.some((tile) => tile !== null)) {
-      clickSound.play();
+      clickSound.current.play();
     }
   }, [tiles]);
 
   useEffect(() => {
     if (gameState !== "In Progress") {
-      gameOverSound.play();
+      gameOverSound.current.play();
     }
   }, [gameState]);
 
@@ -117,41 +135,33 @@ function TicTacToe() {
     <div className="TicTacToe-body">
       {!gameStarted && (
         <div className="mainPage-tictactoe">
-          <span className="T-heading">
-            T<span className="T-middleHeading">I</span>C
-          </span>
-          <span className="T-heading">
-            <span className="T-middleHeading">T</span>A
-            <span className="T-middleHeading">C</span>
-          </span>
-          <span className="T-heading">
-            T<span className="T-middleHeading">O</span>E
-          </span>
-          <button
-            onClick={() => setGameStarted(true)}
-            className="Tstart-button"
-          >
+          <span className="T-heading">T<span className="T-middleHeading">I</span>C</span>
+          <span className="T-heading"><span className="T-middleHeading">T</span>A<span className="T-middleHeading">C</span></span>
+          <span className="T-heading">T<span className="T-middleHeading">O</span>E</span>
+          <button onClick={() => {setShowPlayerOptions(true); }} className="Tstart-button">
             Start Now
           </button>
+          {showPlayerOptions && (
+            <>
+              <button onClick={() => {setSinglePlayerMode(true);setGameStarted(true);}} className="Tstart-button">
+                Single Player
+              </button>
+              <button onClick={() => {setSinglePlayerMode(false);setGameStarted(true);}} className="Tstart-button">
+                Dual Player
+              </button>
+            </>
+          )}
         </div>
       )}
       {gameStarted && !gameOver && (
         <>
           <div className="top-boxes">
-            <div
-              className={`player-box ${playerTurn === PLAYER_X ? "red" : ""}`}
-            >
-              <FaUser />
+            <div className={`player-box ${playerTurn === PLAYER_X ? "red" : ""}`}>
+              <FaUser/>
               <h1>Player X</h1>
-            </div>
-            <div
-              className={`player-box ${
-                playerTurn === PLAYER_O ? "yellow" : ""
-              }`}
-            >
-              <FaUser />
-              <h1>Player O</h1>
-            </div>
+              </div>
+            <div className={`player-box ${playerTurn === PLAYER_O ? "yellow" : ""}`}><FaUser/>
+              <h1>{singlePlayerMode ? "Computer (Player O)" : "Player O"}</h1></div>
           </div>
           <div className="TicTacToe-board">
             {tiles.map((tile, index) => (
@@ -159,9 +169,7 @@ function TicTacToe() {
                 key={index}
                 className={`tile ${index % 3 === 2 ? "" : "right-border"} ${
                   index < 6 ? "bottom-border" : ""
-                } ${tile !== null ? "disabled" : ""} ${
-                  tile === PLAYER_X ? "x" : tile === PLAYER_O ? "o" : ""
-                }`}
+                } ${tile !== null ? "disabled" : ""} ${tile === PLAYER_X ? "x" : tile === PLAYER_O ? "o" : ""}` } 
                 onClick={() => handleTileClick(index)}
               >
                 {tile}
@@ -169,36 +177,34 @@ function TicTacToe() {
             ))}
             {strikeClass && <div className={`strike ${strikeClass}`} />}
           </div>
-          <div style={{ display: "flex", gap: "28px" }}>
-            <button onClick={handleReset} className="Treset-button">
-              <VscDebugRestart />
-            </button>
-            <button onClick={handleBackToHome} className="Treset-button">
-              <IoMdHome />
-            </button>
-          </div>
+          <div style={{display:'flex',gap:'28px'}}>
+              <button onClick={handleReset} className="Treset-button">
+            <VscDebugRestart/>
+          </button>
+          <button onClick={handleBackToHome} className="Treset-button">
+            <IoMdHome />
+          </button>
+            </div>
         </>
       )}
       {gameOver && (
-        <>
-          <div className="Tgame-over">
-            {gameState === "X" && "X Wins"}
-            {gameState === "O" && "O Wins"}
-            {gameState === "Draw" && "Draw"}
-          </div>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "30px" }}
-          >
+        <><div className="Tgame-over">
+          {gameState === "X" && "X Wins"}
+          {gameState === "O" && "O Wins"}
+          {gameState === "Draw" && "Draw"}
+        </div><div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             {gameState === "Draw" ? (
-              <img src="./GIFs/Draw.gif" alt="#" className="celebration-gif" />
+              <img
+                src="./GIFs/Draw.gif"
+                alt="#"
+                className="celebration-gif" />
             ) : (
               <img
                 src="./GIFs/winner.gif"
                 alt="#"
-                className="celebration-gif"
-              />
+                className="celebration-gif" />
             )}
-            <div style={{ display: "flex", gap: "28px" }}>
+            <div style={{ display: 'flex', gap: '28px' }}>
               <button onClick={handleReset} className="Treset-button">
                 Play Again
               </button>
@@ -206,8 +212,7 @@ function TicTacToe() {
                 <IoMdHome />
               </button>
             </div>
-          </div>
-        </>
+          </div></>
       )}
     </div>
   );
