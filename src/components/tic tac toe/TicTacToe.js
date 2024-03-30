@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import gameOverSoundAsset from "../tic tac tao/sounds/game_over.wav";
-import clickSoundAsset from "../tic tac tao/sounds/click.wav";
 import { IoMdHome } from "react-icons/io";
 import { VscDebugRestart } from "react-icons/vsc";
 import { FaUser } from "react-icons/fa";
@@ -59,9 +57,9 @@ function TicTacToe() {
   const [gameStarted, setGameStarted] = useState(false);
   const [singlePlayerMode, setSinglePlayerMode] = useState(false); // Track single player mode
   const [showPlayerOptions, setShowPlayerOptions] = useState(false); // Track whether to show player options
-  const gameOverSound = useRef(new Audio(gameOverSoundAsset));
+  const gameOverSound = useRef(new Audio('./sounds/game_over.wav'));
   gameOverSound.volume = 0.2;
-  const clickSound = useRef(new Audio(clickSoundAsset));
+  const clickSound = useRef(new Audio('./sounds/click.wav'));
   clickSound.volume = 0.5;
 
   const handleTileClick = (index) => {
